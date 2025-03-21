@@ -6,7 +6,14 @@ console.log("Electron - Processo principal")
 // nativeTheme (definir tema claro ou escuro)
 // Menu (definir um menu personalizado)
 // shell (acessar links externos no navegador padrão)
-const { app, BrowserWindow, nativeTheme, Menu, shell } = require('electron/main')
+// ipcMain (permite estabelecer uma comunicação entre processos (IPC) main.js <=> renderer.js)
+const { app, BrowserWindow, nativeTheme, Menu, shell, ipcMain } = require('electron/main')
+
+// Ativação do preload.js (importação do path)
+const path = require('node:path')
+
+// Importação dos métodos conectar e desconectar (módulo de conexão)
+const { conectar, desconectar } = require('./database.js')
 
 // Janela principal
 let win
@@ -20,7 +27,10 @@ const createWindow = () => {
     //resizable: false,
     //minimizable: false,
     //closable: false,
-    //autoHideMenuBar: true
+    //autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
   })
 
   // Carregar o menu personalizado
@@ -40,24 +50,83 @@ function aboutWindow() {
   // validação (se existir a janela principal)
   if (mainWindow) {
     about = new BrowserWindow({
-      width: 320,
-      height: 280,
+      width: 300,
+      height: 200,
       autoHideMenuBar: true,
       resizable: false,
       minimizable: false,
       // estabelecer uma relação hierárquica entre janelas
       parent: mainWindow,
       // criar uma janela modal (só retorna a principal quando encerrada)
-      modal: true
+      modal: true,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js')
+      }
     })
   }
 
   about.loadFile('./src/views/sobre.html')
+
+  // recebimento da mensagem do renderizador da janela sobre para fechar a janela usando o botão OK
+  ipcMain.on('about-exit', () => {
+    // validação (se exitir a janela e a mesma não estiver sido destruida, fechar)
+
+    if (about && !about.isDestroyed()) {
+      about.close()
+    }
+  })
 }
+
+// janela nota
+let note
+function noteWindow() {
+  nativeTheme.themeSource = 'light'
+  // obter a janela principal
+  const mainWindow = BrowserWindow.getFocusedWindow()
+  // validação (se existir a janela principal)
+  if (mainWindow) {
+    note = new BrowserWindow({
+      width: 400,
+      height: 270,
+      autoHideMenuBar: true,
+      resizable: false,
+      minimizable: false,
+      // estabelecer uma relação hierárquica entre janelas
+      parent: mainWindow,
+      // criar uma janela modal (só retorna a principal quando encerrada)
+      modal: true,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js')
+      }
+    })
+  }
+  note.loadFile('./src/views/nota.html')
+}
+
+
+
 
 // inicialização da aplicação (assíncronismo)
 app.whenReady().then(() => {
   createWindow()
+
+  // Melhor local para estabelecer a conexão com o banco de dados
+  // No MongoDB é mais eficiente manter uma única conexão aberta durante todo o tempo de vida do aplicativo e encerrar a conexão quando o aplicativo for finalizado
+  // ipcMain.on (receber mensagem)
+  // db-connect (rótulo da mensagem)
+  ipcMain.on('db-connect', async (event) => {
+    //a linha abaixo estabelece a conexão com o banco de dados e verifica se foi conectado com sucesso (return true)
+    const conectado = await conectar()
+    if (conectado) {
+      // enviar ao renderizador uma mensagem para trocar a imagem do ícone do status do banco de dados (criar um delay de 0.5 ou 1s para sincronização com a nuvem)
+      setTimeout(() => {
+        // enviar ao renderizador a mensagem "conectado"
+        // db-status (IPC - comunicação entre processos - preload.js)
+        event.reply('db-status', "conectado")
+      }, 500) //500ms = 0.5s
+    }
+
+  })
 
   // só ativar a janela principal se nenhuma outra estiver ativa
   app.on('activate', () => {
@@ -74,6 +143,11 @@ app.on('window-all-closed', () => {
   }
 })
 
+// IMPORTANTE! Desconectar do banco de dados quando a aplicação for finalizada
+app.on('before-quit', async () => {
+  await desconectar()
+})
+
 // Reduzir a verbosidade de logs não críticos (devtools)
 app.commandLine.appendSwitch('log-level', '3')
 
@@ -84,7 +158,8 @@ const template = [
     submenu: [
       {
         label: 'Criar nota',
-        accelerator: 'Ctrl+N'
+        accelerator: 'Ctrl+N',
+        click: () => noteWindow()
       },
       {
         type: 'separator'
