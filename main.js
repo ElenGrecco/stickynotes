@@ -224,7 +224,9 @@ const template = [
 ipcMain.on('create-note', async (event, stickyNote) => {
   //IMPORTANTE! Teste de recebimento do objeto - Passo 2
   console.log(stickyNote)
-  //Criar uma nova estrutura de dados para salvat no banco
+
+  try {
+    //Criar uma nova estrutura de dados para salvat no banco
   //Atenção! Os atributos da estrutura precisam ser idênticos ao modelo e os valores são obtidos através do objeto stickyNotes
   const newNote = noteModel({
     texto: stickyNote.textNote,
@@ -235,6 +237,10 @@ ipcMain.on('create-note', async (event, stickyNote) => {
   newNote.save()
   //Enviar ao renderizador um pedido para limpar os campos e setar o formula´rio com os padrões originais (foco no texto), usando o preload.js
   event.reply('reset-form')
+  } catch (error) {
+
+  }
+  
 })
 
 
