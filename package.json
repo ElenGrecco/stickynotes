@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/professorjosedeassis/sticknotes.git"
+    "url": "git+https://github.com/ElenGrecco/stickynotes.git"
   },
-  "author": "Professor José de Assis",
+  "author": "Elen Grecco",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/professorjosedeassis/sticknotes/issues"
+    "url": "https://github.com/ElenGrecco/stickynotes.git/issues"
   },
-  "homepage": "https://github.com/professorjosedeassis/sticknotes#readme",
+  "homepage": "https://github.com/ElenGrecco/stickynotes.git#readme",
   "devDependencies": {
     "electron": "^34.3.0"
   },
