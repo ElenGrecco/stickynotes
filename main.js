@@ -270,6 +270,18 @@ ipcMain.on('list-notes',async (event) => {
   }
 })
 
+// atualização das notas na janela principal
+ipcMain.on('update-list', () => {
+  // validação (se a janela principal exixtir e não tiver sido encerrada)
+  if (win && !win.isDestroyed()){
+    // enviar ao renderer.js um pedido para recarregar a página
+    win.webContents.send('main-reload')
+    // enviar novamente um pedido para troca do ícone de status 
+    setTimeout(() => {
+      win.webContents.send('db-status', "conectado")
+    }, 200) //para garantir que o renderer esteja pronto
+  }
+})
 
 //====== Fim - CRUD Read ===========================================================================================
 //==================================================================================================================
