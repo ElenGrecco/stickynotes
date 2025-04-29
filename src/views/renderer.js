@@ -4,8 +4,8 @@
 
 console.log("Processo de renderização")
 
-//   estratégia para renderizar(desenhar) as notas adesivas
-// usar uma lista para preencher de forma dinamica os itens(notas)
+// estratégia para renderizar(desenhar) as notas adesivas:
+// usar uma lista para preencher de forma dinâmica os ítens(notas)
 
 // vetor global para manipular os dados do banco
 let arrayNotes = []
@@ -14,18 +14,18 @@ let arrayNotes = []
 const list = document.getElementById('listNotes')
 
 // inserção da data no rodapé
-function obterData() {
-    const data = new Date()
+function getDate() {
+    const date = new Date()
     const options = {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
     }
-    return data.toLocaleDateString('pt-BR', options)
+    return date.toLocaleDateString('pt-BR', options)
 }
 
-document.getElementById('dataAtual').innerHTML = obterData()
+document.getElementById('currentDate').innerHTML = getDate()
 
 // Troca do ícone do banco de dados (status da conexão)
 // uso da api do preload.js
@@ -33,57 +33,66 @@ api.dbStatus((event, message) => {
     //teste de recebimento da mensagem
     console.log(message)
     if (message === "conectado") {
-        document.getElementById('iconeDB').src = "../public/img/dbon.png"
+        document.getElementById('iconDB').src = "../public/img/dbon.png"
     } else {
-        document.getElementById('iconeDB').src = "../public/img/dboff.png"
+        document.getElementById('iconDB').src = "../public/img/dboff.png"
     }
 })
 
 // enviar ao main um pedido para conectar com o banco de dados quando a janela principal for inicializada
-
 api.dbConnect()
 
-// =================================================================================
-// === Crud Read ===================================================================
+
+// =============================================================
+// == CRUD Read ================================================
 
 // Passo 1: Enviar ao main um pedido para listar as notas
-
 api.listNotes()
 
-//Passo 5: Recebimento das notas via IPC e redenrização(desenho) das notas no documento index.html
+// Passo 5: Recebimento da notas via IPC e renderização(desenho) das notas no documento index.html
 api.renderNotes((event, notes) => {
     //JSON.parse converte de string para JSON
     const renderNotes = JSON.parse(notes)
-    console.log(renderNotes) //teste do recebimento do Passo 5
-    // redenrizar no index.html o conteúdo do array
-    arrayNotes = renderNotes // Atribuir ao vetor o JSON recebido
-    // Uso do laço forEach para percorrer o vetor e extrair os dados
-    arrayNotes.forEach((n) => {
-        //adição de tags <li> no documento index.html
-        list.innerHTML += `
-            <br>
-                <li>
-                    <p>${n._id}</p>
-                    <p>${n.texto}</p>
-                    <p>${n.cor}</p>
-
-                </li>
-            
-            `
-    })
-
+    console.log(renderNotes) // teste de recebimento (passo 5)
+     // renderizar no index.html o conteúdo do array
+     arrayNotes = renderNotes // atribuir ao vetor o JSON recebido
+     // uso do laço forEach para percorrer o vetor e extrair os dados
+     arrayNotes.forEach((n) => {
+        // adição de tags <li> no documento index.html
+        // var(--${n.cor}) aplica a cor definida nas variáveis CSS. Atenção! É necessário usar o mesmo nome armazenado no banco e nas variáveis CSS
+        list.innerHTML += `           
+            <li class="card" style="background-color: var(--${n.cor});">
+                <p onclick="deleteNote('${n._id}')" id="x">X</p>
+                <p id="code">${n._id}</p>
+                <p>${n.texto}</p>
+                <p id="color">${n.cor}</p>
+            </li>
+        `
+     })
 })
 
-// =================================================================================
-// === Fim -Crud Read ==============================================================
+// == Fim - CRUD Read ==========================================
+// =============================================================
 
 
-// =================================================================================
-// === Atualização das notas =======================================================
+// =============================================================
+// Atualização das notas =======================================
 
 api.mainReload((args) => {
     location.reload()
 })
 
-// === Fim -Atualização das notas ==================================================
-// =================================================================================
+// Fim - atualização das notas =================================
+// =============================================================
+
+
+// =============================================================
+// == CRUD Delete ==============================================
+
+function deleteNote(id) {
+    console.log(id) // Passo 1: receber o id da nota a ser excluída
+    api.deleteNote(id) // Passo 2: enviar o id da nota ao main
+}
+
+//== Fim - CRUD Delete =========================================
+// =============================================================
